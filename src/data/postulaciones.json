@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "usuarioId": 1,
+    "institucionId": 1,
+    "institucionNombre": "Universidad de Buenos Aires",
+    "carrera": "Medicina",
+    "fechaPostulacion": "2024-03-15",
+    "estado": "En revisión",
+    "documentos": ["dni.pdf", "certificado_secundario.pdf"]
+  },
+  {
+    "id": 2,
+    "usuarioId": 1,
+    "institucionId": 2,
+    "institucionNombre": "Instituto Tecnológico de Buenos Aires",
+    "carrera": "Ingeniería Informática",
+    "fechaPostulacion": "2024-03-10",
+    "estado": "Aceptado",
+    "documentos": ["dni.pdf", "certificado_secundario.pdf", "certificado_ingles.pdf"]
+  }
+]

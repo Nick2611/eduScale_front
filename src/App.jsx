@@ -1,41 +1,70 @@
 import React from 'react';
-import Header from './components/Header';
-import SearchSection from './components/SearchSection';
-import FilterSidebar from './components/FilterSidebar';
-import InstitutionGrid from './components/InstitutionGrid';
-import Footer from './components/Footer';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Catalogo from './pages/Catalogo';
+import Login from './pages/Login';
+import Postulacion from './pages/Postulacion';
+import MiEstado from './pages/MiEstado';
+import './App.css';
+
+// Componente para proteger rutas que requieren autenticación
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p>Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
+};
+
+// Componente de página de ayuda básica
+const AyudaPage = () => (
+  <div style={{ paddingTop: '70px', padding: '100px 20px', textAlign: 'center' }}>
+    <h1>Página de Ayuda</h1>
+    <p>Aquí encontrarás información de ayuda y soporte.</p>
+    <p>Esta es una página de demostración.</p>
+  </div>
+);
 
 function App() {
   return (
-    <div className="min-h-screen flex flex-col relative overflow-x-hidden">
-      {/* Background Effects */}
-      <div className="fixed inset-0 bg-gradient-to-br from-dark-bg via-dark-bg to-dark-card/30"></div>
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(59,130,246,0.1),transparent_50%)]"></div>
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(96,165,250,0.1),transparent_50%)]"></div>
-      
-      {/* Content */}
-      <div className="relative z-10 flex flex-col min-h-screen">
-        <Header />
-        <SearchSection />
-        
-        {/* Main Content */}
-        <main className="flex-1 max-w-7xl mx-auto px-6 lg:px-8 py-16 w-full">
-          <div className="flex gap-10 animate-fade-in">
-            {/* Sidebar */}
-            <div className="hidden lg:block animate-slide-up">
-              <FilterSidebar />
-            </div>
-            
-            {/* Main Content */}
-            <div className="flex-1 animate-slide-up" style={{ animationDelay: '0.1s' }}>
-              <InstitutionGrid />
-            </div>
-          </div>
-        </main>
-        
-        <Footer />
-      </div>
-    </div>
+    <AuthProvider>
+      <Router>
+        <div className="App">
+          <Routes>
+            <Route path="/" element={<Catalogo />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/ayuda" element={<AyudaPage />} />
+            <Route 
+              path="/postulacion" 
+              element={
+                <ProtectedRoute>
+                  <Postulacion />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/mi-estado" 
+              element={
+                <ProtectedRoute>
+                  <MiEstado />
+                </ProtectedRoute>
+              } 
+            />
+            {/* Ruta catch-all para redirigir a home */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 
