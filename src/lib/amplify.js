@@ -1,38 +1,40 @@
+// src/lib/amplify.js
 import { Amplify } from 'aws-amplify';
+import { fetchAuthSession, getCurrentUser, signInWithRedirect, signOut } from 'aws-amplify/auth';
 import 'aws-amplify/auth/enable-oauth-listener';
 
-// Detectar si estamos en desarrollo o producción
-const isLocalhost = 
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1' ||
-  window.location.hostname === '';
+const localRedirect = `${window.location.origin}/`;
+const prodRedirect  = 'https://main.dh3o7wiuhouxx.amplifyapp.com/';
 
-const productionRedirect = 'https://main.dh3o7wiuhouxx.amplifyapp.com/';
-const developmentRedirect = 
-  `${window.location.protocol}//${window.location.host}/`;
-
-const redirectSignIn = isLocalhost ? developmentRedirect : productionRedirect;
-const redirectSignOut = isLocalhost ? developmentRedirect : productionRedirect;
-
-const amplifyConfig = {
+Amplify.configure({
   Auth: {
     Cognito: {
-      region: 'us-east-1',
       userPoolId: 'us-east-1_bjEr5VsLF',
       userPoolClientId: '2lrf45k9iseeoa7umn702b4v7o',
-      loginWith: {
-        oauth: {
-          domain: 'eduscale.auth.us-east-1.amazoncognito.com',
-          scopes: ['openid', 'email', 'profile'],
-          redirectSignInUri: redirectSignIn,
-          redirectSignOutUri: redirectSignOut,
-          responseType: 'code'
-        }
+      region: 'us-east-1'
+    },
+    loginWith: {
+      oauth: {
+        domain: 'eduscale.auth.us-east-1.amazoncognito.com',
+        scopes: ['openid', 'email', 'profile'],
+        redirectSignIn: [localRedirect, prodRedirect],
+        redirectSignOut: [localRedirect, prodRedirect],
+        responseType: 'code'
       }
     }
   }
-};
+});
 
-Amplify.configure(amplifyConfig);
-
-
+// Debug helpers sólo en desarrollo
+if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+  // eslint-disable-next-line no-underscore-dangle
+  window.__amplify = Amplify;
+  // eslint-disable-next-line no-underscore-dangle
+  window.__getTokens = async () => (await fetchAuthSession()).tokens;
+  // eslint-disable-next-line no-underscore-dangle
+  window.__getIdToken = async () => (await fetchAuthSession()).tokens?.idToken?.toString() || null;
+  // eslint-disable-next-line no-underscore-dangle
+  window.__logout = () => signOut();
+  // eslint-disable-next-line no-underscore-dangle
+  window.auth = { fetchAuthSession, getCurrentUser, signInWithRedirect, signOut };
+}

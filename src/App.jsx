@@ -39,8 +39,9 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <div className="App">
-          <Routes>
+        <GlobalAuthGate>
+          <div className="App">
+            <Routes>
             <Route path="/" element={<Catalogo />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/login" element={<Login />} />
@@ -63,11 +64,27 @@ function App() {
             />
             {/* Ruta catch-all para redirigir a home */}
             <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </div>
+            </Routes>
+          </div>
+        </GlobalAuthGate>
       </AuthProvider>
     </Router>
   );
+}
+
+function GlobalAuthGate({ children }) {
+  const { loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p>Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+  return children;
 }
 
 export default App;

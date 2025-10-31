@@ -1,12 +1,15 @@
+import './lib/amplify';       // <-- PRIMERO, antes de renderizar
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './App.css';
 import App from './App';
-import './lib/amplify';
+import { AuthProvider } from './context/AuthContext';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </React.StrictMode>
 );

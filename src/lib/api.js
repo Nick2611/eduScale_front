@@ -13,11 +13,22 @@ async function getIdToken() {
 
 export async function apiFetch(path, opts = {}, auth = true) {
   const headers = new Headers(opts.headers || {});
-  headers.set('Content-Type', 'application/json');
+  if (opts.body && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
   if (auth) {
     const token = await getIdToken();
     if (!token) {
-      await signInWithRedirect({ provider: 'COGNITO' });
+      try {
+        await signInWithRedirect({ provider: 'COGNITO' });
+      } catch (e) {
+        const domain = 'eduscale.auth.us-east-1.amazoncognito.com';
+        const clientId = '2lrf45k9iseeoa7umn702b4v7o';
+        const redirectUri = `${window.location.origin}/`;
+        const scope = encodeURIComponent('openid email profile');
+        const authUrl = `https://${domain}/oauth2/authorize?client_id=${clientId}&response_type=code&scope=${scope}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+        window.location.assign(authUrl);
+      }
       return;
     }
     headers.set('Authorization', `Bearer ${token}`);
@@ -25,7 +36,16 @@ export async function apiFetch(path, opts = {}, auth = true) {
   const res = await fetch(`${API_BASE}${path}`, { ...opts, headers, credentials: 'omit' });
   if (!res.ok) {
     if (res.status === 401 || res.status === 403) {
-      await signInWithRedirect({ provider: 'COGNITO' });
+      try {
+        await signInWithRedirect({ provider: 'COGNITO' });
+      } catch (e) {
+        const domain = 'eduscale.auth.us-east-1.amazoncognito.com';
+        const clientId = '2lrf45k9iseeoa7umn702b4v7o';
+        const redirectUri = `${window.location.origin}/`;
+        const scope = encodeURIComponent('openid email profile');
+        const authUrl = `https://${domain}/oauth2/authorize?client_id=${clientId}&response_type=code&scope=${scope}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+        window.location.assign(authUrl);
+      }
     }
     const text = await res.text().catch(() => '');
     throw new Error(`API ${res.status}: ${text}`);
