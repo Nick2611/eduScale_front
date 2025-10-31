@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import './Navbar.css';
 
 const Navbar = () => {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, login } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -47,9 +47,9 @@ const Navbar = () => {
               </button>
             </div>
           ) : (
-            <Link to="/login" className="login-btn">
+            <button onClick={login} className="login-btn">
               Ingresar
-            </Link>
+            </button>
           )}
         </div>
       </div>
