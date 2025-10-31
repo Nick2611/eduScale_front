@@ -36,17 +36,11 @@ const Login = () => {
     setError('');
 
     try {
-      const result = await login(formData.email, formData.password);
-      
-      if (result.success) {
-        // Redirigir a la página de origen o al catálogo
-        navigate(from, { replace: true });
-      } else {
-        setError(result.error || 'Error al iniciar sesión');
-      }
+      // Con Cognito Hosted UI, redirigimos directamente al login federado
+      await login();
+      // No necesitamos navigate aquí porque Auth.federatedSignIn() redirige automáticamente
     } catch (err) {
-      setError('Error inesperado. Intenta nuevamente.');
-    } finally {
+      setError('Error al iniciar sesión. Intenta nuevamente.');
       setLoading(false);
     }
   };

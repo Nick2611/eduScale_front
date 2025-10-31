@@ -5,6 +5,7 @@ import Catalogo from './pages/Catalogo';
 import Login from './pages/Login';
 import Postulacion from './pages/Postulacion';
 import MiEstado from './pages/MiEstado';
+import Dashboard from './pages/Dashboard';
 import './App.css';
 
 // Componente para proteger rutas que requieren autenticación
@@ -41,6 +42,7 @@ function App() {
         <div className="App">
           <Routes>
             <Route path="/" element={<Catalogo />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/login" element={<Login />} />
             <Route path="/ayuda" element={<AyudaPage />} />
             <Route 

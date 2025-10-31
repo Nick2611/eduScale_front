@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
+import { Auth } from 'aws-amplify';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const AuthContext = createContext();
 
@@ -11,60 +13,122 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [idToken, setIdToken] = React.useState(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
+  // Manejar el callback de OAuth después del redirect
   useEffect(() => {
-    // Verificar si hay un token almacenado al cargar la aplicación
-    const token = localStorage.getItem('eduscale_token');
-    const userData = localStorage.getItem('eduscale_user');
-    
-    if (token && userData) {
+    const handleAuthCallback = async () => {
       try {
-        setUser(JSON.parse(userData));
+        // Verificar si hay un código en la URL (callback de OAuth)
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        
+        if (code) {
+          // Amplify maneja automáticamente el código, solo necesitamos verificar la sesión
+          const session = await Auth.currentSession();
+          const usr = await Auth.currentAuthenticatedUser();
+          
+          setUser(usr);
+          setIdToken(session.getIdToken().getJwtToken());
+          
+          // Limpiar la URL del código
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
       } catch (error) {
-        console.error('Error parsing user data:', error);
-        localStorage.removeItem('eduscale_token');
-        localStorage.removeItem('eduscale_user');
+        console.error('Error en callback de autenticación:', error);
       }
-    }
-    setLoading(false);
+    };
+
+    handleAuthCallback();
+  }, []);
+
+  // Verificar sesión actual al cargar
+  useEffect(() => {
+    let mounted = true;
+
+    const checkSession = async () => {
+      try {
+        const session = await Auth.currentSession();
+        if (!mounted) return;
+        
+        setIdToken(session.getIdToken().getJwtToken());
+        const usr = await Auth.currentAuthenticatedUser();
+        
+        if (!mounted) return;
+        setUser(usr);
+      } catch (error) {
+        // No hay sesión activa
+        if (mounted) {
+          setUser(null);
+          setIdToken(null);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    checkSession();
+
+    // Escuchar cambios en la autenticación
+    const hubListener = Auth.currentAuthenticatedUser()
+      .then(() => {
+        checkSession();
+      })
+      .catch(() => {
+        if (mounted) {
+          setUser(null);
+          setIdToken(null);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const login = async (email, password) => {
-    // Simulación de autenticación
-    if (email === 'usuario@example.com' && password === 'password') {
-      const mockUser = {
-        id: 1,
-        email: 'usuario@example.com',
-        nombre: 'Juan',
-        apellido: 'Pérez'
-      };
-      
-      const mockToken = 'mock-jwt-token-12345';
-      
-      localStorage.setItem('eduscale_token', mockToken);
-      localStorage.setItem('eduscale_user', JSON.stringify(mockUser));
-      setUser(mockUser);
-      
+    // Si se llama con email/password (desde Login.jsx), usar Hosted UI
+    if (email && password) {
+      // Redirigir a Hosted UI (no manejamos login directo, solo OAuth)
+      await Auth.federatedSignIn();
       return { success: true };
     } else {
-      return { success: false, error: 'Credenciales inválidas' };
+      // Llamada sin parámetros: usar Hosted UI
+      await Auth.federatedSignIn();
+      return { success: true };
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('eduscale_token');
-    localStorage.removeItem('eduscale_user');
-    setUser(null);
+  const logout = async () => {
+    try {
+      await Auth.signOut();
+      setUser(null);
+      setIdToken(null);
+      navigate('/');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
   };
 
   const value = {
-    user,
+    user: user ? {
+      id: user.attributes?.sub,
+      email: user.attributes?.email,
+      nombre: user.attributes?.given_name || user.attributes?.name?.split(' ')[0] || '',
+      apellido: user.attributes?.family_name || user.attributes?.name?.split(' ').slice(1).join(' ') || '',
+      ...user.attributes
+    } : null,
     login,
     logout,
     loading,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
+    idToken
   };
 
   return (
