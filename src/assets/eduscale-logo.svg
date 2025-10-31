@@ -1,0 +1,18 @@
+<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo circular con gradiente suave -->
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <circle cx="20" cy="20" r="18" fill="url(#bgGrad)" stroke="#e2e8f0" stroke-width="1"/>
+  
+  <!-- Letras ES simplificadas -->
+  <text x="20" y="28" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white" text-anchor="middle">ES</text>
+  
+  <!-- Pequeña flecha de crecimiento -->
+  <path d="M8 32 L32 8" stroke="#fbbf24" stroke-width="2" fill="none"/>
+  <path d="M28 8 L32 8 L32 12" stroke="#fbbf24" stroke-width="2" fill="none"/>
+</svg>

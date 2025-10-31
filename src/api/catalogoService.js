@@ -2,17 +2,23 @@
 import axios from 'axios';
 
 // Configuración base de la API
-// En desarrollo usará el proxy, en producción la URL completa
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://tuqlcfqj0l.execute-api.us-east-1.amazonaws.com/v2'
-  : '/v2';
+// Usar variable de ambiente si está disponible, sino usar la configuración por defecto
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 
+  (process.env.NODE_ENV === 'production' 
+    ? '/api/v2'  // Usar el redirect de Amplify en producción
+    : '/v2');
 
 // Crear instancia de axios con configuración base
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000, // 10 segundos
+  timeout: 15000, // 15 segundos
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    // Cabeceras CORS para producción
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
   },
 });
 
@@ -55,8 +61,36 @@ export const getCatalogo = async () => {
     console.log('🔄 Intentando obtener catálogo desde API...');
     console.log('📍 URL base:', API_BASE_URL);
     console.log('📍 URL completa:', `${API_BASE_URL}/catalogo`);
-    // Petición simple sin headers de autorización
-    const response = await apiClient.get('/catalogo');
+    
+    // Intentar petición directa primero
+    let response;
+    try {
+      response = await apiClient.get('/catalogo');
+    } catch (corsError) {
+      // Si falla por CORS, intentar con fetch y mode no-cors como fallback
+      console.log('⚠️ Error CORS con axios, intentando con fetch...');
+      
+      try {
+        const fetchResponse = await fetch(`${API_BASE_URL}/catalogo`, {
+          method: 'GET',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        });
+        
+        if (!fetchResponse.ok) {
+          throw new Error(`HTTP error! status: ${fetchResponse.status}`);
+        }
+        
+        const data = await fetchResponse.json();
+        response = { data };
+      } catch (fetchError) {
+        console.error('❌ Error con fetch también:', fetchError.message);
+        throw corsError; // Lanzar el error original de CORS
+      }
+    }
     
     console.log('✅ Catálogo obtenido desde API:', response.data);
     
@@ -93,7 +127,8 @@ export const getCatalogo = async () => {
     };
   } catch (error) {
     console.warn('⚠️ Error al obtener catálogo desde API:', error.message);
-    console.log('🔄 Usando datos de prueba para desarrollo...');
+    console.warn('🔍 Tipo de error:', error.code || error.name);
+    console.log('🔄 Usando datos de prueba como fallback...');
     
     // Si es un error de CORS o de red, devolver datos de prueba
     return {

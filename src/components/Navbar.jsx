@@ -2,6 +2,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import logoSvg from '../assets/eduscale-logo.svg';
 import './Navbar.css';
 
 const Navbar = () => {
@@ -21,7 +22,7 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-logo">
-          <span className="logo-icon">🎓</span>
+          <img src={logoSvg} alt="EduScale Logo" className="logo-icon" />
           <span className="logo-text">
             EduScale <span className="logo-subtitle">– Ministerio de Educación</span>
           </span>
