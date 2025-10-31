@@ -143,7 +143,8 @@ export const getCatalogo = async () => {
           carreras: ["Medicina", "Ingeniería", "Derecho", "Psicología"],
           becas: true,
           descripcion: "La universidad más prestigiosa de Argentina (Datos de prueba)",
-          ubicacion: "Ciudad de Buenos Aires"
+          ubicacion: "Ciudad de Buenos Aires",
+          tenant_id: "u-bue-uba"
         },
         {
           id: 2,
@@ -154,7 +155,8 @@ export const getCatalogo = async () => {
           carreras: ["Ingeniería", "Informática"],
           becas: true,
           descripcion: "Especializada en carreras técnicas (Datos de prueba)",
-          ubicacion: "Buenos Aires"
+          ubicacion: "Buenos Aires",
+          tenant_id: "u-bue-utn"
         },
         {
           id: 3,
@@ -165,7 +167,8 @@ export const getCatalogo = async () => {
           carreras: ["Medicina", "Arquitectura", "Administración"],
           becas: false,
           descripcion: "Una de las universidades más antiguas del país (Datos de prueba)",
-          ubicacion: "Córdoba Capital"
+          ubicacion: "Córdoba Capital",
+          tenant_id: "u-cor-unc"
         },
         {
           id: 4,
@@ -176,7 +179,8 @@ export const getCatalogo = async () => {
           carreras: ["Ingeniería", "Informática", "Administración"],
           becas: true,
           descripcion: "Instituto privado de excelencia académica (Datos de prueba)",
-          ubicacion: "Buenos Aires"
+          ubicacion: "Buenos Aires",
+          tenant_id: "u-bue-itba"
         },
         {
           id: 5,
@@ -187,7 +191,8 @@ export const getCatalogo = async () => {
           carreras: ["Arquitectura", "Ingeniería", "Medicina", "Derecho"],
           becas: false,
           descripcion: "Universidad pública con gran tradición (Datos de prueba)",
-          ubicacion: "La Plata"
+          ubicacion: "La Plata",
+          tenant_id: "u-bue-unlp"
         }
       ],
       error: null
@@ -232,7 +237,37 @@ export const getInstitucionById = async (institutionId) => {
 export const getTenantConfig = async (institutionId) => {
   try {
     console.log('🔄 Obteniendo configuración del tenant:', institutionId);
-    const response = await apiClient.get(`/tenant-config/${institutionId}`);
+    console.log('📍 URL tenant:', `${API_BASE_URL}/tenant-config/${institutionId}`);
+    
+    // Intentar petición directa primero
+    let response;
+    try {
+      response = await apiClient.get(`/tenant-config/${institutionId}`);
+    } catch (corsError) {
+      console.log('⚠️ Error CORS en tenant-config con axios, intentando con fetch...');
+      
+      try {
+        const fetchResponse = await fetch(`${API_BASE_URL}/tenant-config/${institutionId}`, {
+          method: 'GET',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        });
+        
+        if (!fetchResponse.ok) {
+          throw new Error(`HTTP error! status: ${fetchResponse.status}`);
+        }
+        
+        const data = await fetchResponse.json();
+        response = { data };
+      } catch (fetchError) {
+        console.error('❌ Error con fetch también en tenant-config:', fetchError.message);
+        throw corsError; // Lanzar el error original de CORS
+      }
+    }
+    
     console.log('✅ Configuración del tenant obtenida:', response.data);
     
     return {
@@ -242,7 +277,28 @@ export const getTenantConfig = async (institutionId) => {
     };
   } catch (error) {
     console.warn('⚠️ Error al obtener configuración del tenant:', error.message);
+    console.warn('🔍 Tipo de error tenant:', error.code || error.name);
     
+    // Si es un error CORS, devolver configuración por defecto
+    if (error.message?.includes('CORS') || error.name === 'TypeError') {
+      console.log('🔄 Usando configuración de tenant por defecto debido a CORS...');
+      return {
+        success: true,
+        data: {
+          tenant_id: institutionId,
+          primary_color: '#2563eb',
+          secondary_color: '#1d4ed8',
+          accent_color: '#3b82f6',
+          background_color: '#f8fafc',
+          text_color: '#1e293b',
+          logo_url: null,
+          custom_css: null,
+          theme_mode: 'light'
+        },
+        error: null
+      };
+    }
+
     return {
       success: false,
       data: null,

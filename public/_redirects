@@ -1,4 +1,5 @@
 # Redirect API calls to AWS API Gateway with CORS support
+/api/v2/* https://tuqlcfqj0l.execute-api.us-east-1.amazonaws.com/v2/:splat 200
 /api/* https://tuqlcfqj0l.execute-api.us-east-1.amazonaws.com/:splat 200
 
 # Handle client-side routing - All other routes should serve index.html
