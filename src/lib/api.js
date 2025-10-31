@@ -1,4 +1,5 @@
-import { fetchAuthSession, signInWithRedirect } from 'aws-amplify/auth';
+import { fetchAuthSession } from 'aws-amplify/auth';
+import { signInWithRedirect } from 'aws-amplify/auth/cognito';
 
 const API_BASE = 'https://tuqlcfqj0l.execute-api.us-east-1.amazonaws.com/v1';
 

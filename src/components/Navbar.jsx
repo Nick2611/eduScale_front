@@ -9,9 +9,23 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/');
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
   };
+
+  // Debug: mostrar el estado en consola (remover en producción)
+  React.useEffect(() => {
+    console.log('Navbar - Auth state:', { 
+      loading, 
+      isAuthenticated, 
+      hasUser: !!user, 
+      hasProfile: !!profile 
+    });
+  }, [loading, isAuthenticated, user, profile]);
 
   return (
     <nav className="navbar">
@@ -27,7 +41,9 @@ const Navbar = () => {
           <Link to="/" className="navbar-link">Catálogo</Link>
           <Link to="/ayuda" className="navbar-link">Ayuda</Link>
 
-          {loading ? null : isAuthenticated ? (
+          {loading ? (
+            <div className="login-btn" style={{ opacity: 0.7 }}>Cargando...</div>
+          ) : isAuthenticated ? (
             <UserMenu user={user} profile={profile} onLogout={handleLogout} />
           ) : (
             <button onClick={login} className="login-btn">Ingresar</button>

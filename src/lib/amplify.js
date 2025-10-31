@@ -1,7 +1,7 @@
 // src/lib/amplify.js
 import { Amplify } from 'aws-amplify';
-import { fetchAuthSession, getCurrentUser, signInWithRedirect, signOut } from 'aws-amplify/auth';
-import 'aws-amplify/auth/enable-oauth-listener';
+import { fetchAuthSession } from 'aws-amplify/auth';
+import { getCurrentUser, signInWithRedirect, signOut } from 'aws-amplify/auth/cognito';
 
 const localRedirect = `${window.location.origin}/`;
 const prodRedirect  = 'https://main.dh3o7wiuhouxx.amplifyapp.com/';
