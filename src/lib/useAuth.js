@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Auth } from 'aws-amplify';
+import { fetchAuthSession, getCurrentUser, signInWithRedirect, signOut } from 'aws-amplify/auth';
 
 export function useAuth() {
   const [loading, setLoading] = useState(true);
@@ -10,10 +10,10 @@ export function useAuth() {
     let mounted = true;
     (async () => {
       try {
-        const session = await Auth.currentSession();
+        const session = await fetchAuthSession();
         if (!mounted) return;
-        setIdToken(session.getIdToken().getJwtToken());
-        const usr = await Auth.currentAuthenticatedUser();
+        setIdToken(session.tokens?.idToken?.toString() || null);
+        const usr = await getCurrentUser();
         if (!mounted) return;
         setUser(usr);
       } catch {
@@ -25,8 +25,8 @@ export function useAuth() {
     return () => { mounted = false; };
   }, []);
 
-  const login = () => Auth.federatedSignIn();
-  const logout = () => Auth.signOut();
+  const login = () => signInWithRedirect({ provider: 'COGNITO' });
+  const logout = () => signOut();
 
   return { loading, user, idToken, login, logout };
 }
