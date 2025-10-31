@@ -1,43 +1,104 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { catalogoService } from '../api/catalogoService';
 import './FiltersBar.css';
 
-const FiltersBar = ({ filters, onFilterChange, onSearch }) => {
-  const provincias = [
-    'Buenos Aires', 'Córdoba', 'Santa Fe', 'Mendoza', 'Tucumán', 
-    'Entre Ríos', 'Salta', 'Misiones', 'Neuquén', 'Chaco',
-    'Corrientes', 'Santiago del Estero', 'San Juan', 'Jujuy',
-    'Río Negro', 'Formosa', 'Chubut', 'San Luis', 'Catamarca',
-    'La Rioja', 'La Pampa', 'Santa Cruz', 'Tierra del Fuego'
-  ];
+const FiltersBar = ({ filters, onFilterChange, onSearch, instituciones = [] }) => {
+  const [estados, setEstados] = useState([]);
+  const [cargandoEstados, setCargandoEstados] = useState(true);
+  const [opcionesFiltros, setOpcionesFiltros] = useState({
+    niveles: [],
+    tipos: [],
+    carreras: [],
+    provincias: []
+  });
 
-  const niveles = [
-    'Primario', 'Secundario', 'Terciario', 'Universitario'
-  ];
+  // Función para limpiar todos los filtros
+  const handleClearFilters = () => {
+    onFilterChange('provincia', '');
+    onFilterChange('nivel', '');
+    onFilterChange('tipo', '');
+    onFilterChange('carrera', '');
+    onFilterChange('becas', false);
+    // Ejecutar búsqueda automáticamente después de limpiar
+    setTimeout(() => onSearch(), 0);
+  };
 
-  const tipos = [
-    'Pública', 'Privada', 'Cooperativa'
-  ];
+  // Cargar estados desde la API
+  useEffect(() => {
+    const cargarEstados = async () => {
+      try {
+        const result = await catalogoService.getEstados();
+        
+        if (result.success && result.data) {
+          setEstados(Array.isArray(result.data) ? result.data : []);
+        } else {
+          throw new Error(result.error?.message || 'Error al cargar estados');
+        }
+      } catch (error) {
+        console.error('Error al cargar estados:', error);
+        setEstados([]);
+      } finally {
+        setCargandoEstados(false);
+      }
+    };
 
-  const carreras = [
-    'Medicina', 'Ingeniería', 'Derecho', 'Psicología', 'Arquitectura',
-    'Administración', 'Contabilidad', 'Enfermería', 'Educación',
-    'Informática', 'Técnico Electromecánico', 'Técnico en Programación'
-  ];
+    cargarEstados();
+  }, []);
+
+  // Extraer opciones dinámicamente de las instituciones cargadas
+  useEffect(() => {
+    if (!Array.isArray(instituciones) || instituciones.length === 0) {
+      setOpcionesFiltros({
+        niveles: [],
+        tipos: [],
+        carreras: [],
+        provincias: []
+      });
+      return;
+    }
+
+    // Extraer valores únicos de cada campo
+    const nivelesUnicos = [...new Set(instituciones.map(inst => inst.nivel).filter(Boolean))];
+    const tiposUnicos = [...new Set(instituciones.map(inst => inst.tipo).filter(Boolean))];
+    const provinciasUnicas = [...new Set(instituciones.map(inst => inst.provincia).filter(Boolean))];
+    
+    // Extraer carreras de todos los arrays de carreras
+    const todasLasCarreras = instituciones
+      .flatMap(inst => Array.isArray(inst.carreras) ? inst.carreras : [])
+      .filter(Boolean);
+    const carrerasUnicas = [...new Set(todasLasCarreras)];
+
+    console.log('🎯 Filtros dinámicos extraídos:', {
+      niveles: nivelesUnicos,
+      tipos: tiposUnicos,
+      provincias: provinciasUnicas,
+      carreras: carrerasUnicas
+    });
+
+    setOpcionesFiltros({
+      niveles: nivelesUnicos,
+      tipos: tiposUnicos,
+      carreras: carrerasUnicas,
+      provincias: provinciasUnicas
+    });
+  }, [instituciones]);
 
   return (
     <div className="filters-bar">
       <div className="filters-container">
         <div className="filters-grid">
           <div className="filter-group">
-            <label htmlFor="provincia">Ciudad/Provincia</label>
+            <label htmlFor="provincia">Provincia</label>
             <select
               id="provincia"
               value={filters.provincia}
               onChange={(e) => onFilterChange('provincia', e.target.value)}
             >
               <option value="">Todas las provincias</option>
-              {provincias.map(provincia => (
-                <option key={provincia} value={provincia}>{provincia}</option>
+              {opcionesFiltros.provincias.map(provincia => (
+                <option key={provincia} value={provincia}>
+                  {provincia}
+                </option>
               ))}
             </select>
           </div>
@@ -50,7 +111,7 @@ const FiltersBar = ({ filters, onFilterChange, onSearch }) => {
               onChange={(e) => onFilterChange('nivel', e.target.value)}
             >
               <option value="">Todos los niveles</option>
-              {niveles.map(nivel => (
+              {opcionesFiltros.niveles.map(nivel => (
                 <option key={nivel} value={nivel}>{nivel}</option>
               ))}
             </select>
@@ -64,7 +125,7 @@ const FiltersBar = ({ filters, onFilterChange, onSearch }) => {
               onChange={(e) => onFilterChange('tipo', e.target.value)}
             >
               <option value="">Todos los tipos</option>
-              {tipos.map(tipo => (
+              {opcionesFiltros.tipos.map(tipo => (
                 <option key={tipo} value={tipo}>{tipo}</option>
               ))}
             </select>
@@ -78,7 +139,7 @@ const FiltersBar = ({ filters, onFilterChange, onSearch }) => {
               onChange={(e) => onFilterChange('carrera', e.target.value)}
             >
               <option value="">Todas las carreras</option>
-              {carreras.map(carrera => (
+              {opcionesFiltros.carreras.map(carrera => (
                 <option key={carrera} value={carrera}>{carrera}</option>
               ))}
             </select>
@@ -96,9 +157,14 @@ const FiltersBar = ({ filters, onFilterChange, onSearch }) => {
             <label htmlFor="becas">Solo instituciones con becas disponibles</label>
           </div>
 
-          <button className="search-btn" onClick={onSearch}>
-            🔍 Buscar
-          </button>
+          <div className="filter-actions">
+            <button className="clear-filters-btn" onClick={handleClearFilters}>
+              🗑️ Limpiar Filtros
+            </button>
+            <button className="search-btn" onClick={onSearch}>
+              🔍 Buscar
+            </button>
+          </div>
         </div>
       </div>
     </div>

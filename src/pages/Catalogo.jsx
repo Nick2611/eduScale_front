@@ -4,12 +4,19 @@ import FiltersBar from '../components/FiltersBar';
 import InstitutionCard from '../components/InstitutionCard';
 import ModalInstitutionInfo from '../components/ModalInstitutionInfo';
 import Footer from '../components/Footer';
-import catalogoData from '../data/catalogo.json';
+import useCatalogo from '../hooks/useCatalogo';
 import './Catalogo.css';
 
 const Catalogo = () => {
-  const [institutions, setInstitutions] = useState([]);
-  const [filteredInstitutions, setFilteredInstitutions] = useState([]);
+  const { 
+    instituciones,
+    institucionesFiltradas, 
+    cargando, 
+    error, 
+    filtrarInstituciones, 
+    refrescarCatalogo 
+  } = useCatalogo();
+  
   const [selectedInstitution, setSelectedInstitution] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filters, setFilters] = useState({
@@ -20,12 +27,6 @@ const Catalogo = () => {
     becas: false
   });
 
-  useEffect(() => {
-    // Simular carga de datos del catálogo
-    setInstitutions(catalogoData);
-    setFilteredInstitutions(catalogoData);
-  }, []);
-
   const handleFilterChange = (filterName, value) => {
     setFilters(prev => ({
       ...prev,
@@ -34,44 +35,7 @@ const Catalogo = () => {
   };
 
   const handleSearch = () => {
-    let filtered = institutions;
-
-    // Filtrar por provincia
-    if (filters.provincia) {
-      filtered = filtered.filter(inst => 
-        inst.provincia.toLowerCase().includes(filters.provincia.toLowerCase())
-      );
-    }
-
-    // Filtrar por nivel
-    if (filters.nivel) {
-      filtered = filtered.filter(inst => 
-        inst.nivel.toLowerCase().includes(filters.nivel.toLowerCase())
-      );
-    }
-
-    // Filtrar por tipo
-    if (filters.tipo) {
-      filtered = filtered.filter(inst => 
-        inst.tipo.toLowerCase().includes(filters.tipo.toLowerCase())
-      );
-    }
-
-    // Filtrar por carrera
-    if (filters.carrera) {
-      filtered = filtered.filter(inst => 
-        inst.carreras.some(carrera => 
-          carrera.toLowerCase().includes(filters.carrera.toLowerCase())
-        )
-      );
-    }
-
-    // Filtrar por becas
-    if (filters.becas) {
-      filtered = filtered.filter(inst => inst.becas === true);
-    }
-
-    setFilteredInstitutions(filtered);
+    filtrarInstituciones(filters);
   };
 
   const handleViewMore = (institution) => {
@@ -87,7 +51,7 @@ const Catalogo = () => {
   // Aplicar filtros automáticamente cuando cambian
   useEffect(() => {
     handleSearch();
-  }, [filters, institutions]);
+  }, [filters, filtrarInstituciones]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="catalogo-page">
@@ -106,19 +70,36 @@ const Catalogo = () => {
             filters={filters}
             onFilterChange={handleFilterChange}
             onSearch={handleSearch}
+            instituciones={instituciones}
           />
 
           <section className="institutions-section">
             <div className="section-header">
               <h2 className="section-title">Instituciones Disponibles</h2>
-              <p className="results-count">
-                {filteredInstitutions.length} resultado{filteredInstitutions.length !== 1 ? 's' : ''} encontrado{filteredInstitutions.length !== 1 ? 's' : ''}
-              </p>
+              {!cargando && (
+                <p className="results-count">
+                  {institucionesFiltradas.length} resultado{institucionesFiltradas.length !== 1 ? 's' : ''} encontrado{institucionesFiltradas.length !== 1 ? 's' : ''}
+                </p>
+              )}
             </div>
 
-            {filteredInstitutions.length > 0 ? (
+            {cargando ? (
+              <div className="loading-state">
+                <div className="loading-spinner"></div>
+                <p>Cargando instituciones...</p>
+              </div>
+            ) : error ? (
+              <div className="error-state">
+                <div className="error-icon">⚠️</div>
+                <h3>Error al cargar el catálogo</h3>
+                <p>{error}</p>
+                <button onClick={refrescarCatalogo} className="retry-button">
+                  Intentar nuevamente
+                </button>
+              </div>
+            ) : institucionesFiltradas.length > 0 ? (
               <div className="institutions-grid">
-                {filteredInstitutions.map(institution => (
+                {institucionesFiltradas.map(institution => (
                   <InstitutionCard
                     key={institution.id}
                     institution={institution}

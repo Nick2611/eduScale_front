@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Catalogo from './pages/Catalogo';
-import Login from './pages/Login';
 import Postulacion from './pages/Postulacion';
 import MiEstado from './pages/MiEstado';
 import Dashboard from './pages/Dashboard';
@@ -10,20 +9,36 @@ import './App.css';
 
 // Componente para proteger rutas que requieren autenticación
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user, idToken } = useAuth();
   
+  console.log('🛡️ ProtectedRoute - Estado:', { 
+    isAuthenticated, 
+    loading, 
+    hasUser: !!user, 
+    hasToken: !!idToken 
+  });
+  
+  // Si está cargando, esperar un poco antes de redirigir
   if (loading) {
     return (
       <div className="loading-screen">
         <div className="loading-spinner">
           <div className="spinner"></div>
-          <p>Cargando...</p>
+          <p>Verificando autenticación...</p>
         </div>
       </div>
     );
   }
   
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  // Verificar tanto isAuthenticated como la presencia de token/usuario
+  const hasValidAuth = isAuthenticated && (user || idToken);
+  
+  if (!hasValidAuth) {
+    console.log('🚫 Acceso denegado - redirigiendo a home');
+    return <Navigate to="/" replace />;
+  }
+  
+  return children;
 };
 
 // Componente de página de ayuda básica
@@ -39,12 +54,12 @@ function App() {
   return (
     <Router>
       <AuthProvider>
+        <OAuthHandler />
         <GlobalAuthGate>
           <div className="App">
             <Routes>
             <Route path="/" element={<Catalogo />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/login" element={<Login />} />
             <Route path="/ayuda" element={<AyudaPage />} />
             <Route 
               path="/postulacion" 
@@ -72,18 +87,11 @@ function App() {
   );
 }
 
+function OAuthHandler() {
+  return null;
+}
+
 function GlobalAuthGate({ children }) {
-  const { loading } = useAuth();
-  if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>Cargando...</p>
-        </div>
-      </div>
-    );
-  }
   return children;
 }
 

@@ -17,16 +17,6 @@ const Navbar = () => {
     }
   };
 
-  // Debug: mostrar el estado en consola (remover en producción)
-  React.useEffect(() => {
-    console.log('Navbar - Auth state:', { 
-      loading, 
-      isAuthenticated, 
-      hasUser: !!user, 
-      hasProfile: !!profile 
-    });
-  }, [loading, isAuthenticated, user, profile]);
-
   return (
     <nav className="navbar">
       <div className="navbar-container">
@@ -42,11 +32,15 @@ const Navbar = () => {
           <Link to="/ayuda" className="navbar-link">Ayuda</Link>
 
           {loading ? (
-            <div className="login-btn" style={{ opacity: 0.7 }}>Cargando...</div>
-          ) : isAuthenticated ? (
+            <div className="login-btn" style={{ opacity: 0.7 }}>
+              Cargando...
+            </div>
+          ) : isAuthenticated && (user || profile) ? (
             <UserMenu user={user} profile={profile} onLogout={handleLogout} />
           ) : (
-            <button onClick={login} className="login-btn">Ingresar</button>
+            <button onClick={login} className="login-btn">
+              Ingresar
+            </button>
           )}
         </div>
       </div>

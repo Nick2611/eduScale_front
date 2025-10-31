@@ -1,0 +1,209 @@
+/* src/components/TenantInstitutionCard.css */
+
+.tenant-institution-card {
+  background: var(--surface-color, #ffffff);
+  border-radius: var(--card-radius, 16px);
+  box-shadow: var(--card-shadow, 0 4px 16px rgba(0,0,0,.08));
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.tenant-institution-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--card-shadow, 0 8px 24px rgba(0,0,0,.12));
+}
+
+.tenant-institution-card.loading {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-content {
+  text-align: center;
+  color: var(--text-color, #6b7280);
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--primary-color, #3b82f6);
+  border-top: 3px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.card-header {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: flex-start;
+}
+
+.institution-logo {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--button-radius, 12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-color, #f8fafc);
+  border: 2px solid var(--primary-color, #3b82f6);
+  flex-shrink: 0;
+}
+
+.institution-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--button-radius, 10px);
+}
+
+.logo-fallback {
+  font-size: 1.5rem;
+}
+
+.institution-info {
+  flex: 1;
+  font-family: var(--font-family, 'Inter, system-ui, sans-serif');
+}
+
+.institution-name {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-color, #1f2937);
+}
+
+.institution-location {
+  color: var(--text-color, #6b7280);
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.tenant-domain {
+  color: var(--accent-color, #16a34a);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.institution-tags {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.tag {
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--button-radius, 20px);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.level-tag {
+  background-color: var(--accent-color, #16a34a);
+  color: var(--background-color, #ffffff);
+}
+
+.type-tag {
+  background-color: var(--primary-color, #3b82f6);
+  color: var(--background-color, #ffffff);
+}
+
+.scholarship-tag {
+  background-color: var(--accent-color, #f59e0b);
+  color: var(--background-color, #ffffff);
+}
+
+.institution-description {
+  color: var(--text-color, #4b5563);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  font-family: var(--font-family, 'Inter, system-ui, sans-serif');
+}
+
+.tenant-info {
+  background: var(--surface-color, #f8fafc);
+  padding: 1rem;
+  border-radius: var(--card-radius, 12px);
+  margin-bottom: 1rem;
+  border: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+.tenant-info h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-color, #374151);
+}
+
+.config-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--text-color, #6b7280);
+}
+
+.config-details strong {
+  color: var(--text-color, #374151);
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.btn-secondary {
+  padding: 0.75rem 1.5rem;
+  border: 1px solid var(--secondary-color, #e5e7eb);
+  background: var(--secondary-color, #f9fafb);
+  color: var(--text-color, #374151);
+  border-radius: var(--button-radius, 8px);
+  font-weight: 500;
+  font-family: var(--font-family, 'Inter, system-ui, sans-serif');
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--surface-color, #f3f4f6);
+}
+
+.btn-primary {
+  padding: 0.75rem 1.5rem;
+  background: var(--primary-color, #3b82f6);
+  color: var(--background-color, #ffffff);
+  border: none;
+  border-radius: var(--button-radius, 8px);
+  font-weight: 500;
+  font-family: var(--font-family, 'Inter, system-ui, sans-serif');
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.tenant-error {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #fef2f2;
+  border-radius: var(--button-radius, 6px);
+  border: 1px solid #fecaca;
+}

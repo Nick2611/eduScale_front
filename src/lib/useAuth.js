@@ -1,95 +1,134 @@
 import { useEffect, useState, useCallback } from 'react';
-import { fetchAuthSession } from 'aws-amplify/auth';
-import { getCurrentUser, fetchUserAttributes, signOut, signInWithRedirect } from 'aws-amplify/auth/cognito';
+import { fetchAuthSession, signInWithRedirect } from 'aws-amplify/auth';
+import { getCurrentUser, fetchUserAttributes, signOut } from 'aws-amplify/auth/cognito';
 
 export function useAuth() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [idToken, setIdToken] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Función para verificar el estado de autenticación
+  // Función para limpiar el estado de autenticación
+  const clearAuthState = useCallback(() => {
+    setUser(null);
+    setIdToken(null);
+    setIsAuthenticated(false);
+    setError(null);
+  }, []);
+
   const checkAuthStatus = useCallback(async () => {
     try {
-      // Si venimos de un redirect con ?code, esperar a que se intercambie
+      setLoading(true);
+      setError(null);
+      
+      // Limpiar parámetros OAuth de la URL
       const urlParams = new URLSearchParams(window.location.search);
-      const hasCode = !!urlParams.get('code');
-      let session = null;
+      const hasOAuthParams = urlParams.get('code') || urlParams.get('state') || urlParams.get('error');
       
-      if (hasCode) {
-        for (let i = 0; i < 60; i++) {
-          try {
-            session = await fetchAuthSession();
-            if (session?.tokens?.idToken) break;
-          } catch {}
-          await new Promise(r => setTimeout(r, 200));
+      if (hasOAuthParams) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        if (urlParams.get('error')) {
+          setError('Error en autenticación');
+          clearAuthState();
+          return;
         }
-        // limpiar el code de la URL
-        if (session?.tokens?.idToken) {
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
-      } else {
-        session = await fetchAuthSession();
+        // Esperar procesamiento de OAuth
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
       
-      setIdToken(session.tokens?.idToken?.toString() || null);
+      // Obtener sesión
+      const session = await fetchAuthSession({ forceRefresh: hasOAuthParams });
       
-      const usr = await getCurrentUser().catch(() => null);
-      if (usr) {
-        const attrs = await fetchUserAttributes().catch(() => null);
-        setUser(attrs ? { attributes: attrs, username: usr.username, signInDetails: usr.signInDetails } : usr);
-      } else {
-        setUser(null);
+      if (!session?.tokens?.idToken) {
+        clearAuthState();
+        return;
       }
-    } catch {
-      // not signed in
-      setUser(null);
-      setIdToken(null);
+      
+      const idTokenString = session.tokens.idToken.toString();
+      setIdToken(idTokenString);
+      
+      // Obtener datos del usuario
+      try {
+        const currentUser = await getCurrentUser();
+        const userAttributes = await fetchUserAttributes();
+        
+        setUser({
+          username: currentUser.username,
+          userId: currentUser.userId,
+          signInDetails: currentUser.signInDetails,
+          attributes: userAttributes
+        });
+        setIsAuthenticated(true);
+      } catch (userError) {
+        // Fallback usando token
+        try {
+          const tokenPayload = JSON.parse(atob(idTokenString.split('.')[1]));
+          setUser({
+            username: tokenPayload.email || tokenPayload['cognito:username'] || 'usuario',
+            attributes: {
+              email: tokenPayload.email,
+              sub: tokenPayload.sub,
+              name: tokenPayload.name || tokenPayload.given_name
+            }
+          });
+          setIsAuthenticated(true);
+        } catch (fallbackError) {
+          clearAuthState();
+        }
+      }
+      
+    } catch (error) {
+      setError(error.message);
+      clearAuthState();
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [clearAuthState]);
 
   useEffect(() => {
     checkAuthStatus();
-    
-    // Escuchar cambios en la URL (para detectar redirects)
-    const handlePopState = () => {
-      checkAuthStatus();
-    };
-    
-    // Escuchar cambios de foco en la ventana (para detectar cambios de pestaña)
-    const handleFocus = () => {
-      checkAuthStatus();
-    };
-    
-    window.addEventListener('popstate', handlePopState);
-    window.addEventListener('focus', handleFocus);
-    
-    // Verificar cada 30 segundos si hay cambios
-    const interval = setInterval(checkAuthStatus, 30000);
-    
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-      window.removeEventListener('focus', handleFocus);
-      clearInterval(interval);
-    };
   }, [checkAuthStatus]);
 
-  const login = async () => {
+  const login = useCallback(async () => {
     try {
+      setLoading(true);
+      setError(null);
       await signInWithRedirect({ provider: 'COGNITO' });
-    } catch (e) {
-      const domain = 'eduscale.auth.us-east-1.amazoncognito.com';
-      const clientId = '2lrf45k9iseeoa7umn702b4v7o';
-      const redirectUri = `${window.location.origin}/`;
-      const scope = encodeURIComponent('openid email profile');
-      const authUrl = `https://${domain}/oauth2/authorize?client_id=${clientId}&response_type=code&scope=${scope}&redirect_uri=${encodeURIComponent(redirectUri)}`;
-      window.location.assign(authUrl);
+    } catch (error) {
+      setError('Error al iniciar sesión');
+      setLoading(false);
     }
-  };
-  const logout = () => signOut();
+  }, []);
+  
+  const logout = useCallback(async () => {
+    try {
+      setLoading(true);
+      await signOut();
+      clearAuthState();
+    } catch (error) {
+      setError(error.message);
+      clearAuthState();
+    } finally {
+      setLoading(false);
+    }
+  }, [clearAuthState]);
+  
+  const refreshAuthStatus = useCallback(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
-  return { loading, user, idToken, login, logout };
+  return { 
+    loading, 
+    user, 
+    idToken, 
+    isAuthenticated, 
+    error,
+    login, 
+    logout, 
+    refreshAuthStatus,
+    clearAuthState 
+  };
 }
 
 
