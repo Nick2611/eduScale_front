@@ -235,135 +235,10 @@ export const getInstitucionById = async (institutionId) => {
  * @returns {Promise<Object>} Configuración del tenant
  */
 export const getTenantConfig = async (institutionId) => {
-  console.log('🔄 Obteniendo configuración del tenant:', institutionId);
-  
-  // En producción con Amplify, usar configuración por defecto directamente
-  // para evitar problemas de CORS
-  const isAmplifyProduction = window.location.hostname.includes('amplifyapp.com');
-  
-  if (isAmplifyProduction) {
-    console.log('🏭 Detectado entorno Amplify - usando configuración por defecto');
-    
-    // Configuraciones específicas por tenant para demo
-    const tenantConfigs = {
-      'u-bue-uba': {
-        tenant_id: 'u-bue-uba',
-        primary_color: '#1e40af',
-        secondary_color: '#1e3a8a',
-        accent_color: '#3b82f6',
-        background_color: '#f8fafc',
-        text_color: '#1e293b',
-        institution_name: 'Universidad de Buenos Aires',
-        logo_url: null,
-        custom_css: null,
-        theme_mode: 'light'
-      },
-      'u-bue-utn': {
-        tenant_id: 'u-bue-utn',
-        primary_color: '#dc2626',
-        secondary_color: '#b91c1c',
-        accent_color: '#ef4444',
-        background_color: '#fef2f2',
-        text_color: '#1e293b',
-        institution_name: 'Universidad Tecnológica Nacional',
-        logo_url: null,
-        custom_css: null,
-        theme_mode: 'light'
-      },
-      'u-cor-unc': {
-        tenant_id: 'u-cor-unc',
-        primary_color: '#7c3aed',
-        secondary_color: '#6d28d9',
-        accent_color: '#8b5cf6',
-        background_color: '#faf5ff',
-        text_color: '#1e293b',
-        institution_name: 'Universidad Nacional de Córdoba',
-        logo_url: null,
-        custom_css: null,
-        theme_mode: 'light'
-      },
-      'u-bue-itba': {
-        tenant_id: 'u-bue-itba',
-        primary_color: '#059669',
-        secondary_color: '#047857',
-        accent_color: '#10b981',
-        background_color: '#f0fdf4',
-        text_color: '#1e293b',
-        institution_name: 'Instituto Tecnológico de Buenos Aires',
-        logo_url: null,
-        custom_css: null,
-        theme_mode: 'light'
-      },
-      'u-bue-unlp': {
-        tenant_id: 'u-bue-unlp',
-        primary_color: '#ea580c',
-        secondary_color: '#c2410c',
-        accent_color: '#f97316',
-        background_color: '#fff7ed',
-        text_color: '#1e293b',
-        institution_name: 'Universidad Nacional de La Plata',
-        logo_url: null,
-        custom_css: null,
-        theme_mode: 'light'
-      }
-    };
-    
-    const config = tenantConfigs[institutionId] || {
-      tenant_id: institutionId,
-      primary_color: '#2563eb',
-      secondary_color: '#1d4ed8',
-      accent_color: '#3b82f6',
-      background_color: '#f8fafc',
-      text_color: '#1e293b',
-      institution_name: 'Institución Educativa',
-      logo_url: null,
-      custom_css: null,
-      theme_mode: 'light'
-    };
-    
-    console.log('✅ Configuración del tenant (por defecto):', config);
-    
-    return {
-      success: true,
-      data: config,
-      error: null
-    };
-  }
-
-  // En desarrollo local, intentar la petición real
   try {
-    console.log('📍 URL tenant:', `${API_BASE_URL}/tenant-config/${institutionId}`);
-    
-    // Intentar petición directa primero
-    let response;
-    try {
-      response = await apiClient.get(`/tenant-config/${institutionId}`);
-    } catch (corsError) {
-      console.log('⚠️ Error CORS en tenant-config con axios, intentando con fetch...');
-      
-      try {
-        const fetchResponse = await fetch(`${API_BASE_URL}/tenant-config/${institutionId}`, {
-          method: 'GET',
-          mode: 'cors',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-        });
-        
-        if (!fetchResponse.ok) {
-          throw new Error(`HTTP error! status: ${fetchResponse.status}`);
-        }
-        
-        const data = await fetchResponse.json();
-        response = { data };
-      } catch (fetchError) {
-        console.error('❌ Error con fetch también en tenant-config:', fetchError.message);
-        throw corsError; // Lanzar el error original de CORS
-      }
-    }
-    
-    console.log('✅ Configuración del tenant obtenida desde API:', response.data);
+    console.log('🔄 Obteniendo configuración del tenant:', institutionId);
+    const response = await apiClient.get(`/tenant-config/${institutionId}`);
+    console.log('✅ Configuración del tenant obtenida:', response.data);
     
     return {
       success: true,
@@ -372,25 +247,15 @@ export const getTenantConfig = async (institutionId) => {
     };
   } catch (error) {
     console.warn('⚠️ Error al obtener configuración del tenant:', error.message);
-    console.warn('🔍 Tipo de error tenant:', error.code || error.name);
     
-    // Fallback a configuración por defecto
-    console.log('🔄 Usando configuración de tenant por defecto debido a error...');
     return {
-      success: true,
-      data: {
-        tenant_id: institutionId,
-        primary_color: '#2563eb',
-        secondary_color: '#1d4ed8',
-        accent_color: '#3b82f6',
-        background_color: '#f8fafc',
-        text_color: '#1e293b',
-        institution_name: 'Institución Educativa',
-        logo_url: null,
-        custom_css: null,
-        theme_mode: 'light'
-      },
-      error: null
+      success: false,
+      data: null,
+      error: {
+        message: error.response?.data?.message || error.message || 'Error al cargar configuración del tenant',
+        status: error.response?.status || 500,
+        code: error.code
+      }
     };
   }
 };
